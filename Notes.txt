@@ -1,0 +1,1 @@
+Aufrufen über python src/main.py example/QC.py example/settings.json

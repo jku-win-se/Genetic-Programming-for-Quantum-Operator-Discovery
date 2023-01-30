@@ -1,0 +1,1 @@
+{"target": [0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 0.0, 0.0, 0.0], "target_pos": 1, "filename": "U_S.txt", "max_gates": 30, "N": 1200, "NGEN": 600, "use_numerical_optimizer": "no"}
