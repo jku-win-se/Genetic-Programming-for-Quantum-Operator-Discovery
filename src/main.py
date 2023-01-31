@@ -7,14 +7,10 @@ Created on Wed Aug 31 09:23:20 2022
 import importlib
 import json
 import pathlib
-
-#%%
-# import User_input as inp
+import pandas as pd
 import time
-
 import numpy as np
-
-import helper_func as fun
+from . import helper_func as fun
 import sys
 #%%
 
@@ -33,7 +29,7 @@ def main(circuit_file, settings_file):
         settings = json.load(settingsf)
         adjust_settings(circ, settings)
     folder=circ_file.parent
-    sys.stdout = open("{}\Results_GP_{}".format(folder,settings["filename"]), "w")
+    #sys.stdout = open("{}\Results_GP_{}".format(folder,settings["filename"]), "w")
     toolbox = fun.deap_init(settings, circ)
     print("Initialization done! Doing GP now...")
 
@@ -59,7 +55,7 @@ def main(circuit_file, settings_file):
     if settings["sel_scheme"] != "Manual":
         with open("{}\{}".format(folder,settings["filename"]), "w") as CIRC_file:
             CIRC_file.write(res[0].qasm())
-        print(res[0].draw())
+        #print(res[0].draw())
         print("Settings for this run are:")
         print(settings)
 
@@ -67,10 +63,13 @@ def main(circuit_file, settings_file):
         for count,ind in enumerate(res):
             with open("{}\{}_Ind{}".format(folder,settings["filename"],count), "w") as CIRC_file:
                 CIRC_file.write(ind[0].qasm())
-                print(ind[0].draw())
+                #print(ind[0].draw())
         print("Settings for this run are:")
         print(settings)
-        
+
+    #write to CSV
+    df_log = pd.DataFrame(log)
+    df_log.to_csv(f"{folder}/Results_CSV_{settings['filename']}.csv", index=False)  # Writing to a CSV file
     
 
 
@@ -149,10 +148,10 @@ def adjust_settings(circ, settings):
 #uncomment/comment for using "main" as function rather than right here for developing
 #uncomment for use in console
 if __name__ == "__main__":
-    circuit = sys.argv[1]
-    settings = sys.argv[2]
-    #circuit="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/GM_QAOA/QC.py"
-    #settings="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/GM_QAOA/settings.json"
+    #circuit = sys.argv[1]
+    #settings = sys.argv[2]
+    circuit="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/Grover/QC.py"
+    settings="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/Grover/settings.json"
     assert pathlib.Path(settings).exists()
     main(circuit, settings) #uncomment
     
