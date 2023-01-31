@@ -20,7 +20,7 @@ import sys
 
 
 def main(circuit_file, settings_file):
-    # import circuit file (somewhat hacky...)
+    # import circuit file (somewhat hacky...)        
     circ_file = pathlib.Path(circuit_file)
     assert circ_file.exists()
     print("Importing QCircuit from ", circ_file)
@@ -33,13 +33,16 @@ def main(circuit_file, settings_file):
         settings = json.load(settingsf)
         adjust_settings(circ, settings)
     folder=circ_file.parent
-   # sys.stdout = open("{}\Results_GP_{}".format(folder,settings["filename"]), "w")
+    sys.stdout = open("{}\Results_GP_{}".format(folder,settings["filename"]), "w")
     toolbox = fun.deap_init(settings, circ)
     print("Initialization done! Doing GP now...")
 
     start = time.time()
     pop, pareto, log = fun.nsga3(toolbox, settings)
     end_gp=time.time()
+    
+    if settings.get("reduce_pareto") != None:
+        pareto=fun.reduce_pareto(pareto, settings)
     res=fun.get_pareto_final_qc(settings, circ, pareto)
     end=time.time()
     gp_time=end_gp-start
@@ -146,47 +149,14 @@ def adjust_settings(circ, settings):
 #uncomment/comment for using "main" as function rather than right here for developing
 #uncomment for use in console
 if __name__ == "__main__":
-    #circuit = sys.argv[1]
-    #settings = sys.argv[2]
-    circuit="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/GM_QAOA/QC.py"
-    settings="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/GM_QAOA/settings.json"
+    circuit = sys.argv[1]
+    settings = sys.argv[2]
+    #circuit="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/GM_QAOA/QC.py"
+    #settings="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/GM_QAOA/settings.json"
     assert pathlib.Path(settings).exists()
-    #main(circuit, settings) #uncomment
+    main(circuit, settings) #uncomment
     
-    circuit_file=circuit #comment
-    settings_file=settings #comment
-    
-    circ_file = pathlib.Path(circuit_file)
-    assert circ_file.exists()
-    print("Importing QCircuit from ", circ_file)
-    sys.path.append(str(circ_file.parent.absolute()))
-    circ = __import__(circ_file.stem)
+    #circuit_file=circuit #comment
+    #settings_file=settings #comment
 
-    # read settings from file
-    assert pathlib.Path(settings_file).exists()
-    with open(settings_file, 'r') as settingsf:
-        settings = json.load(settingsf)
-        adjust_settings(circ, settings)
-    folder=circ_file.parent
-   # sys.stdout = open("{}\Results_GP_{}".format(folder,settings["filename"]), "w")
-    toolbox = fun.deap_init(settings, circ)
-    print("Initialization done! Doing GP now...")
-
-    start = time.time()
-    pop, pareto, log = fun.nsga3(toolbox, settings)
-    end_gp=time.time()
-    
-    if settings.get("reduce_pareto") != None:
-        pareto=fun.reduce_pareto(pareto, settings)
-    res=fun.get_pareto_final_qc(settings, circ, pareto)
-    end=time.time()
-    gp_time=end_gp-start
-    sel_time=end-end_gp
-    overall_time=end-start
-
-    print("The found oracle is/are: ", res)
-    print("GP, Selection, Overall duration: ", gp_time, sel_time, overall_time)
-
-    for i in range(len(pareto)):
-        print(pareto[i], pareto[i].fitness.values)
 
