@@ -40,7 +40,7 @@ def main(circuit_file, settings_file):
 
     start = time.time()
     pop, pareto, log, time_stamps, pareto_fitness_vals = fun.nsga3(toolbox, settings)
-    print(time_stamps)
+    #print(time_stamps)
     end_gp=time.time()
     
     if settings.get("reduce_pareto") != None:
@@ -57,7 +57,6 @@ def main(circuit_file, settings_file):
     for i in range(len(pareto)):
         print(pareto[i], pareto[i].fitness.values)
 
-    
     if settings["sel_scheme"] != "Manual":
         with open("{}\{}".format(folder,settings["filename"]), "w") as CIRC_file:
             CIRC_file.write(res[0].qasm())
@@ -73,14 +72,23 @@ def main(circuit_file, settings_file):
         print("Settings for this run are:")
         print(settings)
 
-    #write to CSV
+    #write log to CSV
     df_log = pd.DataFrame(log)
-    df_log.to_csv(f"{folder}/Results_CSV_{settings['filename']}.csv", index=False)  # Writing to a CSV file
+    df_log.to_csv(f"{folder}/Logbook_CSV_{settings['filename']}.csv", index=False)  # Writing to a CSV file
 
-    print(pareto_fitness_vals[0][1])
+    # write log to json
+    #log_json = json.dumps(log)
+    #with open(f"{folder}/Logbook_JSON_{settings['filename']}.json", 'w') as outfile:
+    #    json.dump(log_json, outfile)
 
-    #with open(f"{folder}/Fitness_Pareto_GENs_{settings['filename']}.json", 'wb') as outfile:
-     #   json.dump(pareto_fitness_vals[0,1], outfile)
+    #write timestamps to json
+    with open(f"{folder}/Timestamps_GENs_{settings['filename']}.json", 'w') as outfile:
+        json.dump(time_stamps, outfile)
+
+    #write fitness values of Pareto-Front individuals of each generation to json
+    fitness_json = json.dumps(pareto_fitness_vals)
+    with open(f"{folder}/Fitness_Pareto_GENs_{settings['filename']}.json", 'w') as outfile:
+        json.dump(fitness_json,outfile)
 
 
 

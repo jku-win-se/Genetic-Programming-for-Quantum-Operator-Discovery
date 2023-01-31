@@ -639,6 +639,7 @@ def nsga3(toolbox, settings, seed=None):
         for i in range(len(pareto)):
             fitness_values_curr_gen.append(pareto[i].fitness.values)
         fitness_values_generations.append(fitness_values_curr_gen)
+
         # Select the next generation population from parents and offspring
         pop = toolbox.select(pop + offspring, settings["N"])
         
