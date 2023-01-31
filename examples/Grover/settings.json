@@ -3,5 +3,5 @@
   "target_pos": 2,
   "filename": "Grover_Oracle",
   "max_gates": 5,
-"use_numerical_optimizer": "yes"
+"use_numerical_optimizer": "no"
 }

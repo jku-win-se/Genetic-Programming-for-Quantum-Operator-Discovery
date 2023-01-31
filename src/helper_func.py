@@ -13,8 +13,9 @@ import cmath
 import scipy.special as scisp
 #import pyzx as zx
 import time
-#from qiskit import z3
-#import User_input as inp
+import logging
+import logging
+from typing import Optional
 
 from qiskit import quantum_info
 from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
@@ -127,7 +128,7 @@ def singleInd(settings):
         N_CYCLES = randint(2,max_gates+1)
     #N_CYCLES = randint(2, max_gates+1)
     else:
-        N_CYCLES=round(np.random.normal(prob[0],prob[1]))
+        N_CYCLES=round(seeded_rng().normal(prob[0],prob[1]))
         if N_CYCLES <= 2:
             N_CYCLES=2
         if N_CYCLES >= max_gates:
@@ -528,7 +529,7 @@ def mutator(settings, circ, ind):
         j=max(m,n)
         
         temp= ind[i:j + 1]
-        np.random.shuffle(temp)
+        seeded_rng().shuffle(temp)
         temp=list(temp)
         
         for k in range(i,j+1):
@@ -547,7 +548,7 @@ def mutator(settings, circ, ind):
         temp=list(ind[i])
         if len(temp)==3:
             len_param=len(temp[2])
-            p=np.random.uniform(0,np.pi,len_param)
+            p = seeded_rng().uniform(0,np.pi,len_param)
             temp[2]=p
         ind[i]=tuple(temp)
     
@@ -604,11 +605,20 @@ def nsga3(toolbox, settings, seed=None):
     print(logbook.stream)
 
     # Begin the generational process
+    time_stamps = []
+    start_time = time.time()
+    fitness_values_generations = []
+
     for gen in range(1, settings["NGEN"]):
         cxpb=settings["CXPB"] or 1.0
         mutpb=settings["MUTPB"] or 1.0
         offspring = algorithms.varAnd(pop, toolbox, cxpb, mutpb)
-        
+
+        currenttime = time.time() - start_time
+        time_stamps.append(currenttime)
+        if (settings.get("time_limit") is not None) and (currenttime > settings["time_limit"]):
+                break
+
         #remove duplicates and fill with new individuals
         offspring = remove_duplicates(offspring)
         x = settings["N"] - len(offspring)
@@ -624,7 +634,11 @@ def nsga3(toolbox, settings, seed=None):
             ind.fitness.values = fit
     
         pareto.update(offspring)
-        
+
+        fitness_values_curr_gen = []
+        for i in range(len(pareto)):
+            fitness_values_curr_gen.append(pareto[i].fitness.values)
+        fitness_values_generations.append(fitness_values_curr_gen)
         # Select the next generation population from parents and offspring
         pop = toolbox.select(pop + offspring, settings["N"])
         
@@ -633,7 +647,7 @@ def nsga3(toolbox, settings, seed=None):
         logbook.record(gen=gen, evals=len(invalid_ind), **record)
         print(logbook.stream)
 
-    return pop, pareto, logbook
+    return pop, pareto, logbook, time_stamps, fitness_values_generations
 
 
 def circuit_optimization(qc, opt):
@@ -903,3 +917,22 @@ def get_pareto_final_qc(settings, circ, popu):
     f.append(p1)
     
     return final_qc, f, out_state
+
+
+GLOBAL_RNG = None
+def seeded_rng(seed: int = None) -> np.random.Generator:
+    """
+    Once the seed is set, it is permanent, until you use `reset_rng` to reset.
+    Thus, to set it, manually call it before any other function accesses.
+
+    Args:
+        seed (int): Which seed to use. If not, will use random seed.
+
+    Returns:
+        (np.random.Generator): The random number generator
+    """
+    global GLOBAL_RNG
+    if GLOBAL_RNG is None:
+        #logger.info(f"Setting random seed to {seed}")
+        GLOBAL_RNG = np.random.default_rng(seed)
+    return GLOBAL_RNG

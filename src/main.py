@@ -10,10 +10,15 @@ import pathlib
 import pandas as pd
 import time
 import numpy as np
-from . import helper_func as fun
+#from . import helper_func as fun
+import helper_func as fun
 import sys
-#%%
 
+
+GLOBAL_RNG = None
+seed = np.random.randint(1000000, size=1)
+fun.seeded_rng(seed[0])
+print("Seed used: ", seed[0])
 
 def main(circuit_file, settings_file):
     # import circuit file (somewhat hacky...)        
@@ -34,7 +39,8 @@ def main(circuit_file, settings_file):
     print("Initialization done! Doing GP now...")
 
     start = time.time()
-    pop, pareto, log = fun.nsga3(toolbox, settings)
+    pop, pareto, log, time_stamps, pareto_fitness_vals = fun.nsga3(toolbox, settings)
+    print(time_stamps)
     end_gp=time.time()
     
     if settings.get("reduce_pareto") != None:
@@ -70,7 +76,12 @@ def main(circuit_file, settings_file):
     #write to CSV
     df_log = pd.DataFrame(log)
     df_log.to_csv(f"{folder}/Results_CSV_{settings['filename']}.csv", index=False)  # Writing to a CSV file
-    
+
+    print(pareto_fitness_vals[0][1])
+
+    #with open(f"{folder}/Fitness_Pareto_GENs_{settings['filename']}.json", 'wb') as outfile:
+     #   json.dump(pareto_fitness_vals[0,1], outfile)
+
 
 
 def adjust_settings(circ, settings):
@@ -154,8 +165,7 @@ if __name__ == "__main__":
     settings="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/Grover/settings.json"
     assert pathlib.Path(settings).exists()
     main(circuit, settings) #uncomment
-    
-    #circuit_file=circuit #comment
-    #settings_file=settings #comment
+
+
 
 
