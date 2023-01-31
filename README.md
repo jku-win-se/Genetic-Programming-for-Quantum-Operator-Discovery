@@ -47,6 +47,8 @@ Python Deap Library
 
 **prob:** mean and standarddeviation of Gaussian-distribution for individual length sampling, default=None
 
+**use_numerical_optimizer:** option of using a numerical parameter optimizer in the for the fitness evaluation or not, options: "yes", "no", default="yes", if "no" is specified the parameter is mutated and therefore optimized within the NSGA3 
+
 **numerical_optimizer:** classical parameter optimizer, str, default="Nelder-Mead", choose from {Nelder-Mead, COBYLA, BFGS, Powell, CG, Newton-CG, L- BFGS-B, TNC, SLSQP, trustconstr, dogleg, trust-ncg, trust-exact, trust-krylov}
 
 **opt_within:** quantum circuit optimization procedures applied within fitness evaluation, list of str, default=None, choose from {CC, OQ1, Q1, Q2} where CC: CommutativeCancelling, OQ1:Optimize1qGatesDecomposition, Q1:Qiskit Level1 Optimization, Q2:Qiskit Level2 Optimization
@@ -55,7 +57,11 @@ Python Deap Library
 
 **opt_final:** quantum circuit optimization procedures applied for final quantum operator, list of str, default=None, choose from {CC, OQ1, Q1, Q2} where CC: CommutativeCancelling, OQ1:Optimize1qGatesDecomposition, Q1:Qiskit Level1 Optimization, Q2:Qiskit Level2 Optimization
 
+**reduce_pareto:** method for simple transition functions to reduce the solutions in the Pareto-front, tuple of str, default=None, e.g., ["o > 0.8", "g < 10"] keeps only solutions with an overlap greater than 0.8 and a number of gates smaller than 10, (o: overlap, g: number of gates, d: depth, nl: number of non-local gates, p: number of parameters)
+
 **sel_scheme:** method to choose final quantum operator from Pareto-front, str, default=None, choose from {Sorted, Weighted, Manual}
+
+**Sorted_order:** order of fitness values to be used for sorting solutions when sel_scheme="Sorted", list of integers, default = [-1,2,3,4,5]
 
 **weights2:** weights for selecting final quantum operator when using sel_scheme="Weighted", list of floats, default=None, length of list must match number of fitness values (i.e., 5)
 
