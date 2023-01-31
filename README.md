@@ -67,6 +67,8 @@ Python Deap Library
 
 **gateset:** the set of elementary gates which are used as genes, str, default="variable", choose from {variable, fixed}
 
+**time_limit:** the time limit in seconds after which the evolution is stopped; if not specified: evolution completes specified NGEN; default = None
+
 ## Specification of QC.py
 The file containing the overall quantum circuit has to comprise 
 
