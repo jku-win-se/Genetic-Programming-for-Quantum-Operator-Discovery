@@ -608,6 +608,7 @@ def nsga3(toolbox, settings, seed=None):
     time_stamps = []
     start_time = time.time()
     fitness_values_generations = []
+    evals = []
 
     for gen in range(1, settings["NGEN"]):
         cxpb=settings["CXPB"] or 1.0
@@ -646,9 +647,10 @@ def nsga3(toolbox, settings, seed=None):
         # Compile statistics about the new population
         record = stats.compile(pop)
         logbook.record(gen=gen, evals=len(invalid_ind), **record)
+        evals.append(len(invalid_ind))
         print(logbook.stream)
 
-    return pop, pareto, logbook, time_stamps, fitness_values_generations
+    return pop, pareto, logbook, time_stamps, fitness_values_generations, evals
 
 
 def circuit_optimization(qc, opt):

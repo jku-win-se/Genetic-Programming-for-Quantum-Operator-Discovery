@@ -14,11 +14,24 @@ import numpy as np
 import helper_func as fun
 import sys
 
-
+#use new seed and save used seed
+p = pathlib.Path(__file__)
+try:
+    np.loadtxt(f"{p.parents[1]}\Results\seeds.txt")
+except IOError:
+    open(f"{p.parents[1]}\Results\seeds.txt", 'x')
+seeds = np.loadtxt(f"{p.parents[1]}\Results\seeds.txt")
+seeds = list(np.atleast_1d(seeds))
 GLOBAL_RNG = None
 seed = np.random.randint(1000000, size=1)
+while seed in seeds:
+    seed = np.random.randint(1000000, size=1)
+seeds.append(seed[0])
+np.array(seeds)
+np.savetxt(f"{p.parents[1]}\Results\seeds.txt", seeds)
 fun.seeded_rng(seed[0])
 print("Seed used: ", seed[0])
+
 
 def main(circuit_file, settings_file):
     # import circuit file (somewhat hacky...)        
@@ -32,14 +45,14 @@ def main(circuit_file, settings_file):
     assert pathlib.Path(settings_file).exists()
     with open(settings_file, 'r') as settingsf:
         settings = json.load(settingsf)
-        adjust_settings(circ, settings)
+        settings = adjust_settings(circ, settings)
     folder=circ_file.parent
     #sys.stdout = open("{}\Results_GP_{}".format(folder,settings["filename"]), "w")
     toolbox = fun.deap_init(settings, circ)
     print("Initialization done! Doing GP now...")
 
     start = time.time()
-    pop, pareto, log, time_stamps, pareto_fitness_vals = fun.nsga3(toolbox, settings)
+    pop, pareto, log, time_stamps, pareto_fitness_vals, evals = fun.nsga3(toolbox, settings)
     #print(time_stamps)
     end_gp=time.time()
     
@@ -58,15 +71,16 @@ def main(circuit_file, settings_file):
         print(pareto[i], pareto[i].fitness.values)
 
     if settings["sel_scheme"] != "Manual":
-        with open("{}\{}".format(folder,settings["filename"]), "w") as CIRC_file:
+        with open(f"{p.parents[1]}\Results\{settings['filename']}_{seed[0]}", "w") as CIRC_file:
             CIRC_file.write(res[0].qasm())
+        #with open("{}\{}".format(folder,settings["filename"]), "w") as CIRC_file:
         #print(res[0].draw())
         print("Settings for this run are:")
         print(settings)
 
     if settings["sel_scheme"] == "Manual":
         for count,ind in enumerate(res):
-            with open("{}\{}_Ind{}".format(folder,settings["filename"],count), "w") as CIRC_file:
+            with open(f"{p.parents[1]}\Results\{settings['filename']}_{count}", "w") as CIRC_file:
                 CIRC_file.write(ind[0].qasm())
                 #print(ind[0].draw())
         print("Settings for this run are:")
@@ -74,44 +88,29 @@ def main(circuit_file, settings_file):
 
     #write log to CSV
     df_log = pd.DataFrame(log)
-    df_log.to_csv(f"{folder}/Logbook_CSV_{settings['filename']}.csv", index=False)  # Writing to a CSV file
+    df_log.to_csv(f"{p.parents[1]}\Results\Logbook_CSV_{seed[0]}_{settings['filename']}.csv", index=False)  # Writing to a CSV file
 
-    # write log to json
-    #log_json = json.dumps(log)
-    #with open(f"{folder}/Logbook_JSON_{settings['filename']}.json", 'w') as outfile:
-    #    json.dump(log_json, outfile)
+    #write number of evaluations per generation to json
+    with open(f"{p.parents[1]}\Results\Evals_GENs_{seed[0]}_{settings['filename']}.json", 'w') as outfile:
+        json.dump(evals, outfile)
 
     #write timestamps to json
-    with open(f"{folder}/Timestamps_GENs_{settings['filename']}.json", 'w') as outfile:
+    with open(f"{p.parents[1]}\Results\Timestamps_GENs_{seed[0]}_{settings['filename']}.json", 'w') as outfile:
         json.dump(time_stamps, outfile)
 
     #write fitness values of Pareto-Front individuals of each generation to json
     fitness_json = json.dumps(pareto_fitness_vals)
-    with open(f"{folder}/Fitness_Pareto_GENs_{settings['filename']}.json", 'w') as outfile:
+    with open(f"{p.parents[1]}\Results\Fitness_Pareto_GENs_{seed[0]}_{settings['filename']}.json", 'w') as outfile:
         json.dump(fitness_json,outfile)
 
 
 
-def adjust_settings(circ, settings):
+def adjust_settings(circ, update_settings):
     # automatically generated
-    
-    #add default values:
-    if settings.get("N") == None:
-        settings["N"] = 20
-    if settings.get("use_numerical_optimizer") == None:
-        settings["use_numerical_optimizer"] = "yes"
-    if settings.get("NGEN") == None:
-        settings["NGEN"] = 10
-    if settings.get("CXPB") == None:
-        settings["CXPB"] = 1.0
-    if settings.get("MUTPB") == None:
-        settings["MUTPB"] = 1.0
-    if settings.get("gateset") == None:
-        settings["gateset"] = "variable"
-    if settings.get("numerical_optimizer") == None:
-        settings["numerical_optimizer"] = "Nelder-Mead"
-    if settings.get("Sorted_order") == None:
-        settings["Sorted_order"]=[-1,2,3,4,5]
+
+    #update default settings
+    settings = {"N": 20, "use_numerical_optimizer": "yes", "NGEN": 10, "CXPB": 1.0, "MUTPB": 1.0, "gateset": "variable", "numerical_optimizer": "Nelder-Mead", "Sorted_order": [-1,2,3,4,5]}
+    settings.update(update_settings)
     settings["prob"]=settings.get("prob")
     settings["weights_mut"]=settings.get("weights_mut")
     settings["weights_cx"]=settings.get("weights_cx")
@@ -169,8 +168,9 @@ def adjust_settings(circ, settings):
 if __name__ == "__main__":
     #circuit = sys.argv[1]
     #settings = sys.argv[2]
-    circuit="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/Grover/QC.py"
-    settings="C:/Users/fege9/anaconda3/Model-based-QC/GP/Python_Scrips/GECCO2023_Artifact/examples/Grover/settings.json"
+
+    circuit = f"{p.parents[1]}\examples\Grover\QC.py"
+    settings = f"{p.parents[1]}\examples\Grover\settings.json"
     assert pathlib.Path(settings).exists()
     main(circuit, settings) #uncomment
 
