@@ -55,9 +55,9 @@ def main(circuit_file, settings_file, seed):
     folder = circ_file.parent
 
     if settings["use_numerical_optimizer"] == "yes":
-        sys.stdout = open(f"{p.parents[1]}\Results_our_appr\Results_{settings['filename']}_{seed}", "w")
+        sys.stdout = open(f"{p.parents[1]}\Results_our_appr\Results_{settings['filename']}_{seed}.txt", "w")
     elif settings["use_numerical_optimizer"] == "no":
-        sys.stdout = open(f"{p.parents[1]}\Results_comp_appr\Results_{settings['filename']}_{seed}", "w")
+        sys.stdout = open(f"{p.parents[1]}\Results_comp_appr\Results_{settings['filename']}_{seed}.txt", "w")
     else:
         print("Warning: Folder for Results-file not defined!")
 
@@ -113,12 +113,12 @@ def main(circuit_file, settings_file, seed):
         print("Folder for CSV not defined!")
 
     gen_dfs = []
-    for idx, (n_eval, timestamp, pareto) in enumerate(zip(evals, time_stamps, pareto_fitness_vals)):
+    for idx, (n_eval, timestamp, pareto, HV) in enumerate(zip(evals, time_stamps, pareto_fitness_vals, HVs)):
         gen_df = pd.DataFrame(pareto, columns=["overlap", "num_gates", "depth", "num_nonloc_gates", "num_parameters"])
         gen_df["ngen"] = idx + 1
         gen_df["neval"] = n_eval
         gen_df["timestamp"] = timestamp
-        #gen_df["HV"] = HV
+        gen_df["HV"] = HV
         gen_dfs.append(gen_df)
 
     df = pd.concat(gen_dfs)

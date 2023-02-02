@@ -578,7 +578,7 @@ def checkLength(settings):
 
 
 def nsga3(toolbox, settings, seed=None):
-    # rand.seed(seed)
+    np.random.seed(seed)
 
     # Initialize statistics object
     stats = tools.Statistics(lambda ind: ind.fitness.values)
@@ -643,9 +643,16 @@ def nsga3(toolbox, settings, seed=None):
         for i in range(len(pareto)):
             fitness_values_curr_gen.append(pareto[i].fitness.values)
         fitness_values_generations.append(fitness_values_curr_gen)
-
-        #HV = tools.hypervolume(pareto)
-        #HVs.append(HV)
+        #print("Fitness: ", fitness_values_curr_gen)
+        #ref = np.array([0.0, 0, 0, 0, 0])
+        if len(pareto) > 1:
+            #wobj = np.array([ind.fitness.wvalues for ind in pareto]) * -1
+            #ref1 = np.max(wobj, axis=0) + 1
+            #print("Reference: ", ref1)
+            HV = tools.hypervolume(pareto, ref=None)
+        elif len(pareto) < 2:
+            HV = 1000000000
+        HVs.append(HV)
 
         # Select the next generation population from parents and offspring
         pop = toolbox.select(pop + offspring, settings["N"])
