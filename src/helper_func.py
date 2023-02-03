@@ -5,6 +5,7 @@ Created on Wed Aug 31 09:28:56 2022
 @author: fege9
 """
 from deap import creator, base, tools, algorithms
+from deap.benchmarks import tools as benchtools
 import numpy as np
 #from numpy.random import choice, random as rand, randint
 
@@ -646,12 +647,9 @@ def nsga3(toolbox, settings, seed=None):
         #print("Fitness: ", fitness_values_curr_gen)
         #ref = np.array([0.0, 0, 0, 0, 0])
         if len(pareto) > 1:
-            #wobj = np.array([ind.fitness.wvalues for ind in pareto]) * -1
-            #ref1 = np.max(wobj, axis=0) + 1
-            #print("Reference: ", ref1)
-            HV = tools.hypervolume(pareto, ref=None)
+            HV = benchtools.hypervolume(pareto)
         elif len(pareto) < 2:
-            HV = 1000000000
+            HV = 1000000000.0
         HVs.append(HV)
 
         # Select the next generation population from parents and offspring
