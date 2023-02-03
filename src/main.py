@@ -15,30 +15,11 @@ from . import helper_func as fun
 #import helper_func as fun
 import sys
 
-# use new seed and save used seed
-#p = pathlib.Path(__file__)
-"""
-try:
-    np.loadtxt(f"{p.parents[1]}\Results\seeds.txt")
-except IOError:
-    open(f"{p.parents[1]}\Results\seeds.txt", "x")
-seeds = np.loadtxt(f"{p.parents[1]}\Results\seeds.txt")
-seeds = list(np.atleast_1d(seeds))
 
+def main(circuit_file, settings_file, results_folder: pathlib.Path, seed):
+    print(circuit_file, settings_file, results_folder, seed)
+    results_folder.mkdir(exist_ok=True)
 
-seed = np.random.randint(100, size=1)  # aus dem args
-while seed in seeds:
-    seed = np.random.randint(100, size=1)
-seeds.append(seed[0])
-np.array(seeds)
-np.savetxt(f"{p.parents[1]}\Results\seeds.txt", seeds)"""
-#seed = 42
-#fun.seeded_rng(seed)
-
-#print("Seed used: ", seed)
-
-
-def main(circuit_file, settings_file, seed):
     p = pathlib.Path(__file__)
     # import circuit file (somewhat hacky...)
     circ_file = pathlib.Path(circuit_file)
@@ -54,12 +35,17 @@ def main(circuit_file, settings_file, seed):
         settings = adjust_settings(circ, settings)
     folder = circ_file.parent
 
+    # Define where the logs go
     if settings["use_numerical_optimizer"] == "yes":
-        sys.stdout = open(f"{p.parents[1]}\Results_our_appr\Results_{settings['filename']}_{seed}.txt", "w")
+        log_folder = results_folder.parent / "Results_our_appr"
     elif settings["use_numerical_optimizer"] == "no":
-        sys.stdout = open(f"{p.parents[1]}\Results_comp_appr\Results_{settings['filename']}_{seed}.txt", "w")
+        log_folder = results_folder.parent / "Results_comp_appr"
     else:
-        print("Warning: Folder for Results-file not defined!")
+        raise Exception("LogFolder not defined because use_numerical_optimizer is neither 'yes' nor 'no'")
+
+    # remember sysout in file
+    log_folder.mkdir(exist_ok=True)
+    sys.stdout = open(log_folder / f"Results_{settings['filename']}_{seed}.out", "w")
 
     toolbox = fun.deap_init(settings, circ)
     print("Initialization done! Doing GP now...")
@@ -69,7 +55,7 @@ def main(circuit_file, settings_file, seed):
     # print(time_stamps)
     end_gp = time.time()
 
-    if settings.get("reduce_pareto") != None:
+    if settings.get("reduce_pareto") is not None:
         pareto = fun.reduce_pareto(pareto, settings)
     res = fun.get_pareto_final_qc(settings, circ, pareto)
     end = time.time()
@@ -83,34 +69,26 @@ def main(circuit_file, settings_file, seed):
     for i in range(len(pareto)):
         print(pareto[i], pareto[i].fitness.values)
 
-    if settings["sel_scheme"] != "Manual":
-        with open(f"{p.parents[1]}\Results\{settings['filename']}_{settings['use_numerical_optimizer']}_{seed}", "w") as CIRC_file:
+    if settings["sel_scheme"] == "Manual":
+        for count, ind in enumerate(res):
+            with open(results_folder / f"{settings['filename']}_{settings['use_numerical_optimizer']}_{count}_{seed}.qasm", "w") as CIRC_file:
+                CIRC_file.write(ind[0].qasm())
+                # print(ind[0].draw())
+        print("Settings for this run are:")
+        print(settings)
+    else:
+        solution_filename = f"{settings['filename']}_{settings['use_numerical_optimizer']}_{seed}.qasm"
+        with open(results_folder / solution_filename, "w") as CIRC_file:
             CIRC_file.write(res[0].qasm())
         # with open("{}\{}".format(folder,settings["filename"]), "w") as CIRC_file:
         # print(res[0].draw())
         print("Settings for this run are:")
         print(settings)
 
-    if settings["sel_scheme"] == "Manual":
-        for count, ind in enumerate(res):
-            with open(f"{p.parents[1]}\Results\{settings['filename']}_{settings['use_numerical_optimizer']}_{count}_{seed}", "w") as CIRC_file:
-                CIRC_file.write(ind[0].qasm())
-                # print(ind[0].draw())
-        print("Settings for this run are:")
-        print(settings)
-
     # write log to CSV
     df_log = pd.DataFrame(log)
-    if settings["use_numerical_optimizer"] == "yes":
-        df_log.to_csv(
-            f"{p.parents[1]}\Results_our_appr\Logbook_CSV_{seed}_{settings['filename']}.csv", index=False
-        )  # Writing to a CSV file
-    elif settings["use_numerical_optimizer"] == "no":
-        df_log.to_csv(
-            f"{p.parents[1]}\Results_comp_appr\Logbook_CSV_{seed}_{settings['filename']}.csv", index=False
-        )  # Writing to a CSV file
-    else:
-        print("Folder for CSV not defined!")
+    log_csv_name = f"Logbook_CSV_{seed}_{settings['filename']}.csv"
+    df_log.to_csv(log_folder / log_csv_name, index=False)
 
     gen_dfs = []
     for idx, (n_eval, timestamp, pareto, HV) in enumerate(zip(evals, time_stamps, pareto_fitness_vals, HVs)):
@@ -122,12 +100,7 @@ def main(circuit_file, settings_file, seed):
         gen_dfs.append(gen_df)
 
     df = pd.concat(gen_dfs)
-    if settings["use_numerical_optimizer"] == "yes":
-        df.to_csv(f"{p.parents[1]}\Results_our_appr\Run_{seed}_{settings['filename']}.csv", index=False)
-    elif settings["use_numerical_optimizer"] == "no":
-        df.to_csv(f"{p.parents[1]}\Results_comp_appr\Run_{seed}_{settings['filename']}.csv", index=False)
-    else:
-        print("Folder for CSV not defined!")
+    df.to_csv(log_folder / f"Run_{seed}_{settings['filename']}.csv", index=False)
 
 
 def adjust_settings(circ, update_settings):
