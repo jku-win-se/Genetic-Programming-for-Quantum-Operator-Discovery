@@ -792,10 +792,10 @@ def reduce_pareto(pareto, settings):
         for i in reversed(range(len(pareto))):
             if ineq == "<":
                 if pareto[i].fitness.values[f_val] > constr:
-                    pareto.remove(i)
+                    del pareto[i]
             elif ineq == ">":
                 if pareto[i].fitness.values[f_val] < constr:
-                    pareto.remove(i)
+                    del pareto[i]
             else:
                 print("Warning: inequality operator must be either '<' or '>'!")
     return pareto
