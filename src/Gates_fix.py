@@ -6,10 +6,8 @@ Created on Wed Aug 31 09:28:25 2022
 """
 
 # elementary Quantum Gates
-from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
-from qiskit.circuit import Gate
+from qiskit import QuantumCircuit
 import numpy as np
-from numpy.random import choice, random as rand, randint
 
 "RX, RY, and RZ rotations with fixed discrete angles 2πk/8 with k between 1-7"
 

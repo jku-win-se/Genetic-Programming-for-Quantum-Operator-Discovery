@@ -6,10 +6,6 @@ Created on Wed Aug 31 09:25:28 2022
 """
 
 # elementary Quantum Gates
-from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
-from qiskit.circuit import Gate
-import numpy as np
-from numpy.random import choice, random as rand, randint
 
 Non_func_gates = ["x", "y", "z", "cx", "cy", "cz", "swap", "h", "rz", "rx", "ry", "cu", "rzz", "ryy", "rxx"]
 

@@ -7,68 +7,19 @@ Created on Wed Aug 31 09:28:56 2022
 from deap import creator, base, tools, algorithms
 from deap.benchmarks import tools as benchtools
 import numpy as np
-#from numpy.random import choice, random as rand, randint
-
-# import import_ipynb
-# import Gates
-import cmath
 import scipy.special as scisp
 
 # import pyzx as zx
 import time
-import logging
-import logging
-from typing import Optional
-
-from qiskit import quantum_info
-from qiskit import QuantumCircuit, ClassicalRegister, QuantumRegister
-from qiskit.circuit import Gate
-from qiskit import Aer, transpile
+from qiskit import QuantumCircuit
 from qiskit.compiler import transpile
-from qiskit.transpiler import PassManager, passes
+from qiskit.transpiler import PassManager
 from qiskit.transpiler.passes import CommutativeCancellation, Optimize1qGatesDecomposition
 from qiskit.quantum_info import Statevector
 from scipy.optimize import minimize
-from qiskit.circuit import ParameterVector, Parameter
-from qiskit.dagcircuit import DAGCircuit
+# from qiskit.circuit import ParameterVector, Parameter
+# from qiskit.dagcircuit import DAGCircuit
 from qiskit.converters import circuit_to_dag
-
-
-# target = inp.target
-# target_pos=inp.target_pos
-# gateset=inp.gateset
-# max_gates = inp.max_gates
-# N=inp.N
-# NGEN = inp.NGEN
-# CXPB = inp.CXPB
-# MUTPB = inp.MUTPB
-# weights_gates=inp.weights_gates
-# prob=inp.prob
-# numerical_optimizer=inp.numerical_optimizer
-# weights_mut=inp.weights_mut
-# weights_cx=inp.weights_cx
-# opt_within =inp.opt_within
-# opt_final = inp.opt_final
-# opt_select=inp.opt_select
-# sel_scheme=inp.sel_scheme
-# weights2 = inp.weights2
-#
-# target_qubits = inp.target_qubits
-# overall_QC=inp.overall_QC
-# oracle_index=inp.oracle_index
-#
-#
-# vals=inp.vals
-# par_nums=inp.par_nums
-# names=inp.names
-# e_gate=inp.e_gate
-# overall_qubits=inp.overall_qubits
-# qubits=inp.qubits
-# weights =inp.weights
-# M=inp.M
-# operand=inp.operand
-# operator=inp.operator
-# basis=inp.basis
 
 
 def deap_init(settings, circ):
@@ -262,8 +213,6 @@ def ind_to_gate(settings, ind, parameters, opt=None, qubits=None):
 
 
 # define fitness function
-
-
 def quantum_state(settings, circ, ind, qubits=None, method=None, opt_within=None):
     qubits = qubits or settings["qubits"]
     method = method or settings["numerical_optimizer"]
@@ -334,24 +283,12 @@ def fitness_function(settings, circ, ind, target=None):
     for i in ind:
         if i[0] == "Identity":
             d -= 1
-    """d=0
-    for q in range(qubits):
-        dt=0
-        for i in ind:
-            if (q in i[1] and i[0]!="Identity"):
-                dt+=1
-        d=max(d,dt)"""
 
     # number of non-local gates
     nl = oracle_qc[0].num_nonlocal_gates()
-    """nl=0
-    for i in ind:
-        val=Gates.gateArity.get(i[0])
-        if val!=1:
-            nl+=1"""
 
     # number of parameters
-    if params == None:
+    if params is None:
         p = 0
     else:
         p = len(params)
@@ -433,46 +370,46 @@ def mutator(settings, circ, ind):
     weights_gates = settings["weights_gates"]
     weights_mut = settings["weights_mut"]
 
-    l = len(ind)
+    il = len(ind)
     mutators = [0, 1, 2, 3, 4, 5, 6, 7, 8]
     if settings["use_numerical_optimizer"] == "no":
         mutators = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     muttype = seeded_rng().choice(mutators, p=weights_mut)
 
     while 1:
-        if muttype == 6 and l <= 2:
+        if muttype == 6 and il <= 2:
             muttype = seeded_rng().choice(mutators, p=weights_mut)
-        elif muttype == 7 and l <= 4:
+        elif muttype == 7 and il <= 4:
             muttype = seeded_rng().choice(mutators, p=weights_mut)
-        elif muttype == 8 and l <= 2:
+        elif muttype == 8 and il <= 2:
             muttype = seeded_rng().choice(mutators, p=weights_mut)
         else:
             break
 
     # insert
     if muttype == 0:
-        i = seeded_rng().integers(0, l)
+        i = seeded_rng().integers(0, il)
         tpl = tupleConstruct(operand, operator, weights_gates, settings)
         ind.insert(i, tpl)
 
     # delete
     elif muttype == 1:
-        i = seeded_rng().integers(0, l)
+        i = seeded_rng().integers(0, il)
         del ind[i]
 
     # swap
     elif muttype == 2:
-        i, j = seeded_rng().choice(range(l), 2, False)
+        i, j = seeded_rng().choice(range(il), 2, False)
         ind[i], ind[j] = ind[j], ind[i]
 
     # change whole gate
     elif muttype == 3:
-        i = seeded_rng().integers(0, l)
+        i = seeded_rng().integers(0, il)
         ind[i] = tupleConstruct(operand, operator, weights_gates, settings)
 
     # change only target/control-qubits as in Multi-objective (2018) paper
     elif muttype == 4:
-        i = seeded_rng().integers(0, l)
+        i = seeded_rng().integers(0, il)
         temp = list(ind[i])
         if len(temp[1]) == 1:
             qb = [seeded_rng().choice(operand)]
@@ -483,15 +420,15 @@ def mutator(settings, circ, ind):
 
     # move gate to different position in circuit
     elif muttype == 5:
-        i = seeded_rng().integers(0, l)
+        i = seeded_rng().integers(0, il)
         a = ind[i]
         del ind[i]
-        j = seeded_rng().integers(0, l - 1)
+        j = seeded_rng().integers(0, il - 1)
         ind.insert(j, a)
 
     # replace sequence with random sequence of different size
-    elif muttype == 6 and l > 2:
-        m, n = seeded_rng().choice(range(l), 2, False)
+    elif muttype == 6 and il > 2:
+        m, n = seeded_rng().choice(range(il), 2, False)
         i = min(m, n)
         j = max(m, n)
 
@@ -504,8 +441,8 @@ def mutator(settings, circ, ind):
             ind.insert(i + n, tpl)
 
     # swap two random sequences in chromosome
-    elif muttype == 7 and l > 4:
-        i, j, k, l1 = seeded_rng().choice(range(l), 4, False)
+    elif muttype == 7 and il > 4:
+        i, j, k, l1 = seeded_rng().choice(range(il), 4, False)
         lis = list([i, j, k, l1])
         lis.sort()
         a, b, c, d = lis[0], lis[1], lis[2], lis[3]
@@ -522,8 +459,8 @@ def mutator(settings, circ, ind):
             del ind[a]
 
     # random permutation of gates within a sequence
-    elif muttype == 8 and l > 2:
-        m, n = seeded_rng().choice(range(l), 2, False)
+    elif muttype == 8 and il > 2:
+        m, n = seeded_rng().choice(range(il), 2, False)
         i = min(m, n)
         j = max(m, n)
 
@@ -543,7 +480,7 @@ def mutator(settings, circ, ind):
 
     # additional mutator for comparison with [42]
     elif muttype == 9:
-        i = seeded_rng().integers(0, l)
+        i = seeded_rng().integers(0, il)
         temp = list(ind[i])
         if len(temp) == 3:
             len_param = len(temp[2])
@@ -644,8 +581,7 @@ def nsga3(toolbox, settings, seed=None):
         for i in range(len(pareto)):
             fitness_values_curr_gen.append(pareto[i].fitness.values)
         fitness_values_generations.append(fitness_values_curr_gen)
-        #print("Fitness: ", fitness_values_curr_gen)
-        #ref = np.array([0.0, 0, 0, 0, 0])
+
         if len(pareto) > 1:
             HV = benchtools.hypervolume(pareto)
         elif len(pareto) < 2:
@@ -822,7 +758,7 @@ def get_pareto_final_qc(settings, circ, popu):
             if settings["opt_select"] is not None:
                 qc = circuit_optimization(qc, settings["opt_select"])
             fitness = list(fitness_from_qc(qc, settings, circ))
-            if params == None:
+            if params is None:
                 p = 0
             else:
                 p = len(params)
@@ -832,7 +768,7 @@ def get_pareto_final_qc(settings, circ, popu):
 
         return pareto_front
 
-    if settings["sel_scheme"] == None or settings["sel_scheme"] == "Sorted":
+    if settings["sel_scheme"] is None or settings["sel_scheme"] == "Sorted":
         if settings["opt_select"] is None:
             order = settings["Sorted_order"]
             np.array(order)
@@ -851,7 +787,7 @@ def get_pareto_final_qc(settings, circ, popu):
 
             out_state, qc_gate, params, _ = quantum_state(settings, circ, popu[liste[0]])
             qc1 = qc_gate[0]
-            if params == None:
+            if params is None:
                 p1 = 0
             else:
                 p1 = len(params)
@@ -868,7 +804,7 @@ def get_pareto_final_qc(settings, circ, popu):
                 qctmp = oracle[0]
                 qc = circuit_optimization(qctmp, settings["opt_select"])
                 fitness = list(fitness_from_qc(qc, settings, circ))
-                if params == None:
+                if params is None:
                     p = 0
                 else:
                     p = len(params)
@@ -908,7 +844,7 @@ def get_pareto_final_qc(settings, circ, popu):
             p1 = pareto_front[liste[0]][1][4]
 
     if settings["sel_scheme"] == "Weighted":
-        if settings["opt_select"] == None:
+        if settings["opt_select"] is None:
             m1 = -1000
             for i in popu:
                 m2 = np.dot(np.array(settings["weights2"]), np.array(i.fitness.values))

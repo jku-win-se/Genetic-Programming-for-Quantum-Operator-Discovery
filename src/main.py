@@ -4,7 +4,6 @@ Created on Wed Aug 31 09:23:20 2022
 
 @author: fege9
 """
-import importlib
 import json
 import pathlib
 import pandas as pd
@@ -12,7 +11,7 @@ import time
 import numpy as np
 
 from . import helper_func as fun
-#import helper_func as fun
+# import helper_func as fun
 import sys
 
 
@@ -20,7 +19,7 @@ def main(circuit_file, settings_file, results_folder: pathlib.Path, seed):
     print(circuit_file, settings_file, results_folder, seed)
     results_folder.mkdir(exist_ok=True)
 
-    p = pathlib.Path(__file__)
+    # p = pathlib.Path(__file__)
     # import circuit file (somewhat hacky...)
     circ_file = pathlib.Path(circuit_file)
     assert circ_file.exists()
@@ -33,7 +32,7 @@ def main(circuit_file, settings_file, results_folder: pathlib.Path, seed):
     with open(settings_file, "r") as settingsf:
         settings = json.load(settingsf)
         settings = adjust_settings(circ, settings)
-    folder = circ_file.parent
+    # folder = circ_file.parent
 
     # Define where the logs go
     if settings["use_numerical_optimizer"] == "yes":
@@ -71,7 +70,8 @@ def main(circuit_file, settings_file, results_folder: pathlib.Path, seed):
 
     if settings["sel_scheme"] == "Manual":
         for count, ind in enumerate(res):
-            with open(results_folder / f"{settings['filename']}_{settings['use_numerical_optimizer']}_{count}_{seed}.qasm", "w") as CIRC_file:
+            with open(results_folder / f"{settings['filename']}_{settings['use_numerical_optimizer']}"
+                                       f"_{count}_{seed}.qasm", "w") as CIRC_file:
                 CIRC_file.write(ind[0].qasm())
                 # print(ind[0].draw())
         print("Settings for this run are:")
@@ -137,7 +137,7 @@ def adjust_settings(circ, update_settings):
     settings["par_nums"] = Gates.gateParams
     settings["names"] = Gates.gateName
     # default for weights_gates
-    if settings.get("weights_gates") == None:
+    if settings.get("weights_gates") is None:
         settings["weights_gates"] = [1 for i in range(len(settings["names"]))]
     settings["Non_func_gates"] = Gates.Non_func_gates
     settings["e_gate"] = Gates.ElementaryGate()
@@ -175,8 +175,8 @@ def adjust_settings(circ, update_settings):
     # circuit = sys.argv[1]
     # settings = sys.argv[2]
 
-    circuit = f"{p.parents[1]}\examples\Grover\QC.py"
-    settings = f"{p.parents[1]}\examples\Grover\settings.json"
+    circuit = f"{p.parents[1]}/examples/Grover/QC.py"
+    settings = f"{p.parents[1]}/examples/Grover/settings.json"
     assert pathlib.Path(settings).exists()
     main(circuit, settings, seed)  # uncomment
 """
