@@ -36,9 +36,9 @@ def main(circuit_file, settings_file, results_folder: pathlib.Path, seed):
 
     # Define where the logs go
     if settings["use_numerical_optimizer"] == "yes":
-        log_folder = results_folder.parent / "Results_our_appr"
+        log_folder = results_folder.parent / "Results_hybrid_appr"
     elif settings["use_numerical_optimizer"] == "no":
-        log_folder = results_folder.parent / "Results_comp_appr"
+        log_folder = results_folder.parent / "Results_nonhybrid_appr"
     else:
         raise Exception("LogFolder not defined because use_numerical_optimizer is neither 'yes' nor 'no'")
 
